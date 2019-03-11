@@ -13,6 +13,9 @@ struct server {
 /* static functions */
 
 
+
+void* consumer(void *sv);
+
 typedef struct node {
 	int fd;
 	struct node *next;
@@ -56,17 +59,18 @@ void enQ (int connfd, struct wait_queue *q){
 
 
 
-struct int poll (struct wait_queue *q){
+int pollFromQueue(struct wait_queue *q){
 	
 	if(q->head == NULL){
-		return NULL;
+		return -2147483648;
 	}
 	else{
 		q->size = q->size - 1;
+
 		node *temp = q->head;
 		node *nextTemp = q->head->next;
 
-		r->head = nextTemp;
+		q->head = nextTemp;
 		int connfd = temp->fd;
 		free(temp);
 
@@ -136,7 +140,7 @@ struct wait_queue *q;
 
 
 pthread_cond_t full;
-pthread_condt_t empty;
+pthread_cond_t empty;
 pthread_mutex_t mutex;
 
 pthread_t ** arrayOfPThreads;
@@ -157,19 +161,17 @@ struct server * server_init(int nr_threads, int max_requests, int max_cache_size
 		
 		pthread_cond_init(&full, NULL);
 		pthread_cond_init(&empty, NULL);
-
 		pthread_mutex_init(&mutex, NULL);
 
 
 		if(max_requests > 0){
 			q = (struct wait_queue*)malloc(sizeof(struct wait_queue));
 			q->size = 0;
-			numberOfRequests = max_requests;
 		}
 		if(nr_threads> 0){
 			arrayOfPThreads = (pthread_t **)malloc(nr_threads*sizeof(pthread_t*));
 			for(int i = 0; i < nr_threads; i++){
-				 pthread_create(arrayOfPThreads[i], NULL, consumer, sv);
+				 pthread_create((arrayOfPThreads[i]), NULL, consumer, sv);
 			}
 		}
 }
@@ -186,19 +188,21 @@ struct server * server_init(int nr_threads, int max_requests, int max_cache_size
 }
 
 
-void consumer(struct server *sv){
-	while(sv->exiting == 0){
+void* consumer(void *sv){
+	struct server * server  = (struct server *) sv;
+	while(server->exiting == 0){
 		pthread_mutex_lock(&mutex);
 		while(q->size == 0){
 			pthread_cond_wait(&empty, &mutex);
 		}
 		//crit.region
-		int tfd = poll(q);
+		int tfd = pollFromQueue(q);
 		pthread_cond_signal(&full);
 		pthread_mutex_unlock(&mutex);
 
 		do_server_request(sv,tfd);
 	}
+	return NULL;
 }
 
 
@@ -232,13 +236,10 @@ server_exit(struct server *sv)
 
 	//now the join part where i wait for all the threads
 	for (int i = 0;i < sv->nr_threads; i++){
-		pthread_join(arrayOfPThreads[i],NULL);
+		pthread_join(*(arrayOfPThreads[i]),NULL);
 	}
 
 	free(arrayOfPThreads);
-	free(full);
-	free(empty);
-	free(mutex);
 	/* make sure to free any allocated resources */
 	free(sv);
 }
