@@ -56,6 +56,30 @@ void enQ (int connfd, struct wait_queue *q){
 	}
 }
 
+void destroyNodes(struct wait_queue  *q){
+	//printf("in destror node start0.......\n");
+	node *temp = q->head;
+	if(temp == NULL){
+		return;
+	}
+	node *sub = temp;
+	while(temp != NULL){
+		sub = temp;
+		temp = temp->next;
+
+/*
+		#ifdef DEBUG_USE_VALGRIND
+			VALGRIND_STACK_DEREGISTER((sub->thr->stack_ptr +THREAD_MIN_STACK) - (THREAD_MIN_STACK)%16 -8 );
+		#endif
+*/
+		free(sub);
+	}
+	//printf("finished destroynode\n");
+	q->head = NULL;
+	q->back = NULL;
+	return;
+}
+
 
 
 
@@ -240,7 +264,8 @@ server_exit(struct server *sv)
 	}
 
 	free(arrayOfPThreads);
-	
+	destroyNodes(q);
+	free(q);
 	/* make sure to free any allocated resources */
 	free(sv);
 }
