@@ -139,7 +139,9 @@ pthread_cond_t full;
 pthread_condt_t empty;
 pthread_mutex_t mutex;
 
-int numberOfActiveThreads = 0;
+pthread_t ** arrayOfPThreads;
+
+
 
 struct server * server_init(int nr_threads, int max_requests, int max_cache_size)
 {
@@ -169,17 +171,6 @@ struct server * server_init(int nr_threads, int max_requests, int max_cache_size
 			for(int i = 0; i < nr_threads; i++){
 				 pthread_create(arrayOfPThreads[i], NULL, consumer, sv);
 			}
-
-			// int i = 0;
-			// while(1){
-			// 	pthread_join(arrayOfPThreads[i], NULL);
-			// 	i++;
-			// 	//if condition with cond variable and lock on exit
-			// 	if(i == nr_threads){
-			// 		i = 0;
-			// 	}
-			
-			// }
 		}
 }
 
@@ -196,14 +187,18 @@ struct server * server_init(int nr_threads, int max_requests, int max_cache_size
 
 
 void consumer(struct server *sv){
-	pthread_mutex_lock(&mutex);
-	while(q->size == 0){
-		pthread_cond_wait(&empty, &mutex);
+	while(sv->exiting == 0){
+		pthread_mutex_lock(&mutex);
+		while(q->size == 0){
+			pthread_cond_wait(&empty, &mutex);
+		}
+		//crit.region
+		int tfd = poll(q);
+		pthread_cond_signal(&full);
+		pthread_mutex_unlock(&mutex);
+
+		do_server_request(sv,tfd);
 	}
-	int tfd = poll(q);
-	do_server_request(sv,tfd);
-	pthread_cond_signal(&full);
-	pthread_mutex_unlock(&mutex);
 }
 
 
@@ -231,7 +226,19 @@ server_exit(struct server *sv)
 	 * pthread_join in this function so that the main server thread waits
 	 * for all the worker threads to exit before exiting. */
 	sv->exiting = 1;
+	pthread_mutex_lock(&mutex);
+	pthread_cond_broadcast(&full);
+	pthread_mutex_unlock(&mutex);
 
+	//now the join part where i wait for all the threads
+	for (int i = 0;i < sv->nr_threads; i++){
+		pthread_join(arrayOfPThreads[i],NULL);
+	}
+
+	free(arrayOfPThreads);
+	free(full);
+	free(empty);
+	free(mutex);
 	/* make sure to free any allocated resources */
 	free(sv);
 }
