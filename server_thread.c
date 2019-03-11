@@ -143,7 +143,7 @@ pthread_cond_t full;
 pthread_cond_t empty;
 pthread_mutex_t mutex;
 
-pthread_t ** arrayOfPThreads;
+pthread_t * arrayOfPThreads;
 
 
 
@@ -165,13 +165,13 @@ struct server * server_init(int nr_threads, int max_requests, int max_cache_size
 
 
 		if(max_requests > 0){
-			q = (struct wait_queue*)malloc(sizeof(struct wait_queue));
+			q = Malloc(sizeof(struct wait_queue));
 			q->size = 0;
 		}
 		if(nr_threads> 0){
-			arrayOfPThreads = (pthread_t **)malloc(nr_threads*sizeof(pthread_t*));
+			arrayOfPThreads = Malloc(nr_threads*sizeof(pthread_t));
 			for(int i = 0; i < nr_threads; i++){
-				 pthread_create((arrayOfPThreads[i]), NULL, consumer, sv);
+				 pthread_create(&arrayOfPThreads[i], NULL, consumer, sv);
 			}
 		}
 }
@@ -236,10 +236,11 @@ server_exit(struct server *sv)
 
 	//now the join part where i wait for all the threads
 	for (int i = 0;i < sv->nr_threads; i++){
-		pthread_join(*(arrayOfPThreads[i]),NULL);
+		pthread_join(arrayOfPThreads[i],NULL);
 	}
 
 	free(arrayOfPThreads);
+	
 	/* make sure to free any allocated resources */
 	free(sv);
 }
