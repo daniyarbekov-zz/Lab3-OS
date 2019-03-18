@@ -189,7 +189,7 @@ struct server * server_init(int nr_threads, int max_requests, int max_cache_size
 
 
 		if(max_requests > 0){
-			q = Malloc(sizeof(struct wait_queue));
+			q = (struct wait_queue*)malloc(sizeof(struct wait_queue));
 			q->size = 0;
 		}
 		if(nr_threads> 0){
@@ -218,12 +218,18 @@ void* consumer(void *sv){
 		pthread_mutex_lock(&mutex);
 		while(q->size == 0){
 			pthread_cond_wait(&empty, &mutex);
+			if(server->exiting == 1){
+				break;
+			}
 		}
 		//crit.region
+		if(server->exiting == 1){
+			pthread_mutex_unlock(&mutex);
+			return NULL;
+		}
 		int tfd = pollFromQueue(q);
 		pthread_cond_signal(&full);
 		pthread_mutex_unlock(&mutex);
-
 		do_server_request(sv,tfd);
 	}
 	return NULL;
@@ -238,7 +244,9 @@ void server_request(struct server *sv, int connfd)
 		pthread_mutex_lock(&mutex);
 		while(q->size == sv->max_requests){
 			pthread_cond_wait(&full, &mutex);
+
 		}
+		
 		enQ(connfd,q);
 		pthread_cond_signal(&empty);
 		pthread_mutex_unlock(&mutex);
@@ -253,16 +261,18 @@ server_exit(struct server *sv)
 	 * these threads that the server is exiting. make sure to call
 	 * pthread_join in this function so that the main server thread waits
 	 * for all the worker threads to exit before exiting. */
-	sv->exiting = 1;
 	pthread_mutex_lock(&mutex);
-	pthread_cond_broadcast(&full);
+	sv->exiting = 1;
+	pthread_cond_broadcast(&empty);
 	pthread_mutex_unlock(&mutex);
 
 	//now the join part where i wait for all the threads
 	for (int i = 0;i < sv->nr_threads; i++){
 		pthread_join(arrayOfPThreads[i],NULL);
 	}
-
+	
+	
+	
 	free(arrayOfPThreads);
 	destroyNodes(q);
 	free(q);
