@@ -8,7 +8,115 @@ struct server {
 	int max_cache_size;
 	int exiting;
 	/* add any other parameters you need */
+	// lab5
+	struct hashTable* table;
+	struct LRU_list* list;
+
 };
+
+// for lab5
+// hashtable for cache 
+struct hashTable {
+	int size;
+	int key;
+	struct file_data* file;
+};
+
+struct LRU_list{
+
+	struct LRU_list *next;
+	char *file_name;
+};
+
+
+// hash func from lab1
+//cse.yorku.ca/~oz/html, we use 5381 as it says it works fine with it
+// returns hashvalue
+unsigned long hashValue (char* str){
+	//1000th prime value;
+	unsigned long hash = 5381;
+
+	while (*(str)!= '\0'){
+		hash = ((hash<<5) + hash) + *str;
+		str++;
+	}
+	return hash;
+}
+
+
+
+
+
+
+// insert new fetched file in cache
+	// first check if cache size would reach limit if insert, if yes, evict
+int cache_insert(struct server* sv, struct file_data *new_file){
+	// check file size > max cache size
+	if (new_file->file_size > sv->max_cache_size){
+		return -1;
+	}
+	else{
+		// if enough cache space for new file, insert
+		if (new_file->file_size < sv->table->size){
+			// TODO: 
+			//1.add to table 
+			
+			
+			//2. add to list
+		}
+		// if not enough space for new file, evict, then insert again
+		else{
+			cache_evict(sv,1);
+			// TODO: 
+			//1.add to table 
+			
+			
+			//2. add to list
+			return -2;
+		} 
+
+	}
+
+}
+
+// delete file in cache
+int cache_evict(struct server*sv, int amount_to_evict){
+	// if invalid input, i.e. nothing on LRU_list or amount<0
+	if ( sv->list==NULL || amount_to_evict <=0){
+		return -1;
+	}
+
+	// if input valid, retrive from list, delete in table
+	else{
+
+	}
+
+
+}
+
+// lookup if file is in cache
+	// if in cache, update list
+int cache_lookup(struct server *sv, char *file_name){
+
+	hashvalue = hashValue(file_name);
+	index = hashvalue%sv->table->size;
+
+	// if not in cache
+	if(sv->table[index]==NULL){
+		return 0;
+	}
+	// if file already in cache, move it to end of list  **note: end is the most recently used
+	else{
+
+
+	}
+
+}
+
+
+
+
+
 
 /* static functions */
 
