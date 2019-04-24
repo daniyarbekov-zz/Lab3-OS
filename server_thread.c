@@ -55,7 +55,7 @@ typedef struct hashTable{
 void checkLRU(struct hashNode* lru_list, char* first_file_name){
     if (first_file_name!=NULL && lru_list->head!=NULL) {
         if (strcmp(lru_list->head->name, first_file_name) != 0) {
-            fprintf(stderr, "!!!!!!!!!!! first element in LRU got changed !!!!!!");
+//            fprintf(stderr, "!!!!!!!!!!! first element in LRU got changed !!!!!!");
         }
     }
 }
@@ -64,9 +64,9 @@ void checkLRU(struct hashNode* lru_list, char* first_file_name){
 //TODO: delete
 void printLRUhead(struct hashNode* lru_list) {
     if (lru_list->head != NULL) {
-        fprintf(stderr, " !!!!!!!!!!!!!! LRU list->head->name is %s:\n", lru_list->head->name);
+//        fprintf(stderr, " !!!!!!!!!!!!!! LRU list->head->name is %s:\n", lru_list->head->name);
     } else {
-        fprintf(stderr, "!!!!!!!!!! LRU list ->head is NULL \n");
+//        fprintf(stderr, "!!!!!!!!!! LRU list ->head is NULL \n");
     }
 }
 
@@ -77,13 +77,14 @@ void unflagLRU(char* file_name, struct hashNode *lru_list){
     while(temp->name != file_name) {
         temp = temp->next;
     }// now temp points at file with file name in LRU
-    fprintf(stderr,"in unflagged,  %s inuse_flag is %d \n",file_name,temp->inuse_flag);
+//    fprintf(stderr,"in unflagged,  %s inuse_flag is %d \n",file_name,temp->inuse_flag);
     temp->inuse_flag -= 1;
-    fprintf(stderr,"unflagged %s \n",file_name);
+//    fprintf(stderr,"unflagged %s \n",file_name);
 }
 
 
 static void file_data_free(struct file_data *data);
+void update_LRU(char *file_name, struct hashNode *lru_list);
 
 // delete all hashNode_element inside ONE hashNode
 void destroyHashNodesElements(struct hashNode *q){
@@ -98,7 +99,6 @@ void destroyHashNodesElements(struct hashNode *q){
 		temp = temp->next;
 
 		file_data_free(sub->data);
-		//free(sub->name);
 		free(sub);
 	}
 
@@ -125,8 +125,6 @@ void destroyLRUNodes(struct hashNode *q){
 	while(temp != NULL){
 		sub = temp;
 		temp = temp->next;
-
-		free(sub->name);
 		free(sub);
 	}
 
@@ -146,7 +144,7 @@ char* first_file_name = NULL; //TODO: delete
 // note: only added file name
 hashNode_element *buildLRUNode(char *file_name)  { //, struct file_data *new_data
 
-    fprintf(stderr,"buildingLRUNode \n");
+//    fprintf(stderr,"buildingLRUNode \n");
 	hashNode_element *temp = (hashNode_element*)malloc(sizeof(hashNode_element));
 	temp->name = file_name;
 	temp->data = NULL;
@@ -166,10 +164,13 @@ hashNode_element *buildLRUNode(char *file_name)  { //, struct file_data *new_dat
 // i.e. an existing file get used
 // note: this fnc can get called only when the file is found in LRU
 void moveToendLRU (struct hashNode_element *elementToMove, struct hashNode *q){ //char *file_name
-    fprintf(stderr," $$$$$calling moveToendLRU \n");
+//    fprintf(stderr," $$$$$calling moveToendLRU \n");
 	struct hashNode_element *temp = elementToMove;
     struct hashNode_element *tempNext= temp->next;
 
+    if(temp->next == NULL){
+    	return;
+    }
 
     while (tempNext != NULL) {
         temp = tempNext;
@@ -255,14 +256,14 @@ unsigned long hashValue (char* str){
 // if not found in LRU list, added to end of LRU, return -1
 // if found in LRU, updated LRU list, return 1
 void update_LRU(char *file_name, struct hashNode *lru_list){
-	fprintf(stderr, ".....**************UPDATE LRU, file name: %s...\n",file_name);
+//	fprintf(stderr, ".....**************UPDATE LRU, file name: %s...\n",file_name);
 
     //checkLRU(hash_table->lru_list, first_file_name);
     printLRUhead(hash_table->lru_list);
 
 
 	update_lru_counter +=1;
-	fprintf(stderr, "########### update lru counter is %d \n", update_lru_counter);
+//	fprintf(stderr, "########### update lru counter is %d \n", update_lru_counter);
     if (update_lru_counter==1){
         first_file_name = file_name;
     }
@@ -276,36 +277,20 @@ void update_LRU(char *file_name, struct hashNode *lru_list){
 	if (temp == NULL){
 
 		struct hashNode_element *addedElement = buildLRUNode(file_name); // build an element with file_name (no data in the element)
-        fprintf(stderr, ".....LRU head empty, finished building 1st LRU element: %s \n", addedElement->name);
+//        fprintf(stderr, ".....LRU head empty, finished building 1st LRU element: %s \n", addedElement->name);
 
         lru_list->head = addedElement; // size +1
-		fprintf(stderr, "..... LRU head name is now %s...\n",lru_list->head->name);
+//		fprintf(stderr, "..... LRU head name is now %s...\n",lru_list->head->name);
 
-//		int hash_value = hashValue(lru_list->head->name);
-//		int hashIndex = hash_value%hashTable_size;
-//		if (hash_table->hashNodes[hashIndex]==NULL){
-//
-//			fprintf(stderr, "#########################in update LRU, hashNodes[%d] is NULL \n",hashIndex);
-//		}
-//		else if (hash_table->hashNodes[hashIndex]->head==NULL){
-//			fprintf(stderr, "#########################in update LRU, hashNodes[%d]->head is NULL \n",hashIndex);
-//
-//		}
-//		else{
-//            fprintf(stderr, "#########################in update LRU, hashNodes[%d]->head is *NOT* NULL\n",hashIndex);
-//            fprintf(stderr, "hashNodes[%d]->head->name is : %s \n",hashIndex,hash_table->hashNodes[hashIndex]->head->name);
-//
-//        }
-        //checkLRU(hash_table->lru_list, first_file_name);
         printLRUhead(hash_table->lru_list);
 
 		return;
 	}else if(strcmp(temp->name,file_name) == 0){
-		fprintf(stderr, ".....LRU head is the one, maybe move head of LRU to the end...\n");
-        temp->inuse_flag += 1;
+//		fprintf(stderr, ".....LRU head is the one, maybe move head of LRU to the end...\n");
+        //temp->inuse_flag += 1;
 
         if(lru_list->head->next==NULL){ // if only one in LRU and looked up againn
-            fprintf(stderr, ".....only 1 in LRU, no need to move...\n");
+//            fprintf(stderr, ".....only 1 in LRU, no need to move...\n");
             return;
         }
 
@@ -318,8 +303,8 @@ void update_LRU(char *file_name, struct hashNode *lru_list){
 		struct hashNode_element *tempNext = temp->next;
 		while(tempNext != NULL){
 			if(strcmp(tempNext->name,file_name) == 0){
-			    temp->inuse_flag = 1;
-			    fprintf(stderr, ".....found %s in updating LRU LOOOOOP, moving to end ...\n", tempNext->name);
+			    //temp->inuse_flag += 1;
+//			    fprintf(stderr, ".....found %s in updating LRU LOOOOOP, moving to end ...\n", tempNext->name);
 				temp->next = tempNext->next;
 				moveToendLRU(tempNext,lru_list);
 				return;
@@ -351,8 +336,8 @@ void update_LRU(char *file_name, struct hashNode *lru_list){
 
 // lookup if file is in cache by checking hashTable
 	// if in cache, return file_data* ; if not, return NULL
-struct file_data* cache_lookup(struct server *sv, char *file_name,int check){  // check = 0 means its first lookup, update LRU when check =0
-	fprintf(stderr, "++++++++++++cache lookup begin, looking for %s...\n", file_name);
+struct file_data* cache_lookup(struct server *sv, char *file_name){  // check = 0 means its first lookup, update LRU when check =0
+//	fprintf(stderr, "++++++++++++cache lookup begin, looking for %s...\n", file_name);
 
     //checkLRU(hash_table->lru_list, first_file_name);
 
@@ -360,31 +345,25 @@ struct file_data* cache_lookup(struct server *sv, char *file_name,int check){  /
 	int hash_index = hash_value % hashTable_size;
 
 	if (hash_table->hashNodes[hash_index] == NULL || hash_table->hashNodes[hash_index]->head == NULL){
-		fprintf(stderr, ".....cache lookup begin: nothing in the hashNodes[%d]...\n",hash_index);
-//        checkLRU(hash_table->lru_list, first_file_name);
-        printLRUhead(hash_table->lru_list);
+//		fprintf(stderr, ".....cache lookup begin: nothing in the hashNodes[%d]...\n",hash_index);
 
         return NULL;
 	} else{
-		fprintf(stderr, ".....cache lookup begin: something in the hashNodes[%d], going thru thishashNode...\n",hash_index);
+//		fprintf(stderr, ".....cache lookup begin: something in the hashNodes[%d], going thru thishashNode...\n",hash_index);
 		struct hashNode *p = hash_table->hashNodes[hash_index];
 		struct hashNode_element *temp = p->head;
 		struct hashNode_element *tempNext = p->head->next;
 
 		while(temp != NULL){
 			if(strcmp(temp->name,file_name) == 0){
-			    fprintf(stderr,"found this file in cache, no need to read from disk \n");
-			    //temp->inuse_flag = 1;
-                if(check == 0) {
-                    update_LRU(file_name, hash_table->lru_list);
-                }
+//			    fprintf(stderr,"found this file in cache, no need to read from disk \n");
 				return temp->data;
 			}
 			temp = tempNext;
 			tempNext = tempNext->next;
 		}
 //        checkLRU(hash_table->lru_list, first_file_name);
-        printLRUhead(hash_table->lru_list);
+       // printLRUhead(hash_table->lru_list);
 
         return NULL;
 
@@ -397,12 +376,11 @@ struct file_data* cache_lookup(struct server *sv, char *file_name,int check){  /
 // return name of the deleted file
 // if nothing in LRU, return NULL
 
+
+
 char *pollFromLRU(struct hashNode *q){
-
-
-	fprintf(stderr, ".....polling from LRU:hash_table->lru_list->head->name is %s...\n",hash_table->lru_list->head->name);
-//    checkLRU(hash_table->lru_list, first_file_name);
-
+//	fprintf(stderr, ".....polling from LRU...\n");
+//	fprintf(stderr, "hash_table->lru_list->head->name is %s \n:",hash_table->lru_list->head->name);
 
 	if(q->head == NULL){
 		return NULL;
@@ -410,54 +388,84 @@ char *pollFromLRU(struct hashNode *q){
 	else{
 		hashNode_element *temp = q->head;
 		hashNode_element *nextTemp = q->head->next;
-        hashNode_element *beforeTemp = temp;
+		free(temp);
 
-		// if head of LRU is not in use, delete lru head, return head name
-		if(temp->inuse_flag != 1){
-            q->head = nextTemp;
-            fprintf(stderr, "----head not in use, return name is : %s ----\n",temp->name);
+		q->head = nextTemp;
+//		fprintf(stderr, "temp->name is %s \n:",temp->name);
 
-            if(q->head == NULL){
-                q->back = NULL;
-            }
-//            checkLRU(hash_table->lru_list, first_file_name);
-            printLRUhead(hash_table->lru_list);
-
-            return temp->name;//TODO: free temp?
-	    }
-		else{ // if head is IN use, increment to the next not in use and delete
-		    fprintf(stderr, "======================LRU head: %s in use =================\n",temp->name);
-
-		    if (temp->inuse_flag == 1 &&nextTemp ==NULL){ // if only 1 element and its in use...
-                fprintf(stderr,"Only 1 element: %s in LRU and its in use! Cannot poll from LRU :(  \n",temp->name);
-                goto out;
-		    }
-
-		    while(temp->inuse_flag == 1 && nextTemp !=NULL){
-
-		        temp = nextTemp;
-		        nextTemp = nextTemp->next;
-		    } // new temp points at the first one not in use
-
-
-
-            while(beforeTemp->next != temp){
-                beforeTemp = beforeTemp->next;
-            } // now beforeTemp points at the element before tobe deleted one
-            beforeTemp->next = nextTemp; // skip temp
-            return temp->name; //TODO: free temp?
-
+		if(q->head == NULL){
+			q->back = NULL;
 		}
 
 
 
-
-		}
-
-    out:
-    return NULL;
-
+		return temp->name;
+	}
 }
+
+
+
+//char *pollFromLRU(struct hashNode *q){
+//
+//
+//	fprintf(stderr, ".....polling from LRU:hash_table->lru_list->head->name is %s...\n",hash_table->lru_list->head->name);
+////    checkLRU(hash_table->lru_list, first_file_name);
+//
+//
+//	if(q->head == NULL){
+//		return NULL;
+//	}
+//	else{
+//		hashNode_element *temp = q->head;
+//		hashNode_element *nextTemp = q->head->next;
+//        hashNode_element *beforeTemp = temp;
+//
+//		// if head of LRU is not in use, delete lru head, return head name
+//		if(temp->inuse_flag != 1){
+//            q->head = nextTemp;
+//            fprintf(stderr, "----head not in use, return name is : %s ----\n",temp->name);
+//
+//            if(q->head == NULL){
+//                q->back = NULL;
+//            }
+////            checkLRU(hash_table->lru_list, first_file_name);
+//            printLRUhead(hash_table->lru_list);
+//
+//            return temp->name;//TODO: free temp?
+//	    }
+//		else{ // if head is IN use, increment to the next not in use and delete
+//		    fprintf(stderr, "======================LRU head: %s in use =================\n",temp->name);
+//
+//		    if (temp->inuse_flag == 1 &&nextTemp ==NULL){ // if only 1 element and its in use...
+//                fprintf(stderr,"Only 1 element: %s in LRU and its in use! Cannot poll from LRU :(  \n",temp->name);
+//                goto out;
+//		    }
+//
+//		    while(temp->inuse_flag == 1 && nextTemp !=NULL){
+//
+//		        temp = nextTemp;
+//		        nextTemp = nextTemp->next;
+//		    } // new temp points at the first one not in use
+//
+//
+//
+//            while(beforeTemp->next != temp){
+//                beforeTemp = beforeTemp->next;
+//            } // now beforeTemp points at the element before tobe deleted one
+//            beforeTemp->next = nextTemp; // skip temp
+//            return temp->name; //TODO: free temp?
+//
+//		}
+//
+//
+//
+//
+//		}
+//
+//    out:
+//    return NULL;
+//
+//}
 
 
 
@@ -469,14 +477,14 @@ char *pollFromLRU(struct hashNode *q){
 // return 1 if evicted 1
 
 int cache_evict(struct server*sv, int amount_to_evict){
-	fprintf(stderr, ".....cache evict begin...\n");
+//	fprintf(stderr, ".....cache evict begin...\n");
 //    checkLRU(hash_table->lru_list, first_file_name);
 
 	// if invalid input, i.e. nothing on LRU_list or amount<0
 	if ( hash_table->lru_list == NULL || hash_table->lru_list->head == NULL || amount_to_evict <=0){
-		fprintf(stderr, ".....LRU empty, cannot evict...\n");
+//		fprintf(stderr, ".....LRU empty, cannot evict...\n");
 //        checkLRU(hash_table->lru_list, first_file_name);
-        printLRUhead(hash_table->lru_list);
+ //       printLRUhead(hash_table->lru_list);
 
 		return -1;
 	}
@@ -510,14 +518,14 @@ int cache_evict(struct server*sv, int amount_to_evict){
         if (file_name_todelete ==NULL){
             return -2;
         }
-        fprintf(stderr, ".....deleted 1 element %s from LRU, will delete in hashTable...\n", file_name_todelete);
+//        fprintf(stderr, ".....deleted 1 element %s from LRU, will delete in hashTable...\n", file_name_todelete);
 
 
 		// 2. delete in table, update hashTable cache_size_remaining, update node size //TODO: check all size problems!
 
 		int hash_value = hashValue(file_name_todelete);
 		int hash_index = hash_value % hashTable_size;
-		fprintf(stderr, ".....found hashindex: %d... will delete in hashNode\n,", hash_index);
+//		fprintf(stderr, ".....found hashindex: %d... will delete in hashNode\n,", hash_index);
 
 
 		hashNode  *p;
@@ -531,15 +539,17 @@ int cache_evict(struct server*sv, int amount_to_evict){
 
 		// if first element is the one, delete
 		if (strcmp(temp->name,file_name_todelete) == 0){
-			fprintf(stderr, ".....first element in hashNode the one to delete...\n");
+//			fprintf(stderr, ".....first element in hashNode the one to delete...\n");
 
 			hash_table->cache_size_remaining += temp->data->file_size; //
 			p->head = tempNext;
+			free(temp);
+//			file_data_free(temp->data);
 
 			//free(temp->name); //TODO: solve double free issue
-			file_data_free(temp->data);
-			free(temp);
-			fprintf(stderr, ".....finished first freeing element in hashNode...\n");
+//			file_data_free(temp->data);
+//			free(temp);
+//			fprintf(stderr, ".....finished first freeing element in hashNode...\n");
 
 			if (p->head == NULL){
 				p->back = NULL;
@@ -549,13 +559,13 @@ int cache_evict(struct server*sv, int amount_to_evict){
             return 1;
 
 		} else{ //if element to evict is not the first in hashNode
-			fprintf(stderr, ".....element to evict is not the first in hashNode...\n");
+//			fprintf(stderr, ".....element to evict is not the first in hashNode...\n");
 
 			while (tempNext != NULL) {
 				if (strcmp(tempNext->name,file_name_todelete) == 0){ // if next one is the one to delete
 					temp->next = tempNext->next;
 					hash_table->cache_size_remaining += temp->data->file_size; //
-					file_data_free(tempNext->data);
+//					file_data_free(tempNext->data);
 					free(tempNext);
 					return 1;
 				}
@@ -584,27 +594,17 @@ int cache_evict(struct server*sv, int amount_to_evict){
 
 int cache_insert(struct server *sv, struct file_data *new_file){
 
-	fprintf(stderr, ".....cache insert begin...\n");
+//	fprintf(stderr, ".....cache insert begin...\n");
 //    checkLRU(hash_table->lru_list, first_file_name);
     //printLRUhead(hash_table->lru_list);
 
-    fprintf(stderr, ".....insert new_file name is: %s, size is %d...\n",new_file->file_name, new_file->file_size);
+//    fprintf(stderr, ".....insert new_file name is: %s, size is %d...\n",new_file->file_name, new_file->file_size);
 
-    // added: check again if in cache in insert
-    struct file_data* secondcheck_result = cache_lookup(sv,new_file->file_name,1);
-
-    if (secondcheck_result != NULL){
-        fprintf(stderr, " 2 2 2 2 2 2 second check indicates its in hashTable already\n");
-        return -2;
-    }
-
-    else { // if pass second check
 
         // if file size larger than total file size, return
         if (new_file->file_size > hash_table->total_cache_size) {
-            fprintf(stderr, ".....larger than capacity,return...\n");
+//            fprintf(stderr, ".....larger than capacity,return...\n");
 //            checkLRU(hash_table->lru_list, first_file_name);
-
             return -1;
         }
 
@@ -613,38 +613,38 @@ int cache_insert(struct server *sv, struct file_data *new_file){
         else {
             int evict_result;
 
-            fprintf(stderr, ".....adding to hashTable ...\n");
+//            fprintf(stderr, ".....adding to hashTable ...\n");
 
             //keep evicting until have enough space
             while (new_file->file_size > hash_table->cache_size_remaining) {
-                fprintf(stderr, ".....calling evict...\n");
+//                fprintf(stderr, ".....calling evict...\n");
                 evict_result = cache_evict(sv, 1);
-                if (evict_result == -2){
+                if (evict_result <= -1){
                     break;
                 }
                 else{
-                fprintf(stderr, ".....evicted...\n");
+//                fprintf(stderr, ".....evicted...\n");
                 }
             }
-            if (evict_result == -2){ // return -2 when only 1 element in LRU and its in use...
+            if (evict_result <= -2){ // return -2 when only 1 element in LRU and its in use...
                 return -3;//TODO:
             }
             //now we have enough space for new_file...
-            fprintf(stderr, ".....enough space in  hashtable...\n");
+//            fprintf(stderr, ".....enough space in  hashtable...\n");
 
             int hash_value = hashValue(new_file->file_name);
             int hash_index = hash_value % hashTable_size;
 
-            fprintf(stderr, ".....got hashindex %d to add to hashtable...\n", hash_index);
+//            fprintf(stderr, ".....got hashindex %d to add to hashtable...\n", hash_index);
 
             // update cache size remaining
             hash_table->cache_size_remaining -= new_file->file_size;
-            fprintf(stderr, ".....remaining cache size is %d...\n", hash_table->cache_size_remaining);
+//            fprintf(stderr, ".....remaining cache size is %d...\n", hash_table->cache_size_remaining);
 
             hashNode *p;
             if (hash_table->hashNodes[hash_index] == NULL) { //init hashNodes if null
 
-                fprintf(stderr, ".....init hashNode...\n");
+//                fprintf(stderr, ".....init hashNode...\n");
 
                 p = (hashNode *) malloc(sizeof(hashNode));
                 p->head = NULL;
@@ -656,7 +656,7 @@ int cache_insert(struct server *sv, struct file_data *new_file){
             struct hashNode_element *temp = hash_table->hashNodes[hash_index]->head;
             // if nothing in that hashNode
             if (temp == NULL) {
-                fprintf(stderr, ".....inserting into an empty hashNode, new file name: %s...\n",new_file->file_name);
+//                fprintf(stderr, ".....inserting into an empty hashNode, new file name: %s...\n",new_file->file_name);
 
 
                 hashNode_element *element;
@@ -667,16 +667,16 @@ int cache_insert(struct server *sv, struct file_data *new_file){
                 element->inuse_flag = 0;
 
                 hash_table->hashNodes[hash_index]->head = element;
-                fprintf(stderr, ".....finished adding to hashTable, about to update LRU...\n");
+//                fprintf(stderr, ".....finished adding to hashTable, about to update LRU...\n");
 
-                update_LRU(element->name, hash_table->lru_list);
+               // update_LRU(element->name, hash_table->lru_list);
 //                checkLRU(hash_table->lru_list, first_file_name);
 //                printLRUhead(hash_table->lru_list);
 
                 return 1;
 
             } else { // hashNode has element, create an element and put at the end
-                fprintf(stderr, ".....!!inserting to an NON-EMPTY hashNode...\n");
+//                fprintf(stderr, ".....!!inserting to an NON-EMPTY hashNode...\n");
                 struct hashNode_element *tempNext = temp->next;
 
                 while (tempNext != NULL) {
@@ -687,7 +687,7 @@ int cache_insert(struct server *sv, struct file_data *new_file){
                 struct hashNode_element *addedElement = buildLRUNode(new_file->file_name);
                 addedElement->data = new_file;
                 temp->next = addedElement;
-                update_LRU(addedElement->name, hash_table->lru_list);
+//                update_LRU(addedElement->name, hash_table->lru_list);
 //                checkLRU(hash_table->lru_list, first_file_name);
 //                printLRUhead(hash_table->lru_list);
 
@@ -698,7 +698,7 @@ int cache_insert(struct server *sv, struct file_data *new_file){
             return -2; // fail to add to hashTable
         }
 
-    }
+
 }
 
 
@@ -849,69 +849,106 @@ do_server_request(struct server *sv, int connfd)
 	/* read file,
 	 * fills data->file_buf with the file contents,
 	 * data->file_size with file size. */
-
-	pthread_mutex_lock(&mutex_hash); //lock
-
-	struct file_data *lookup_result;
-	lookup_result = cache_lookup(sv,data->file_name,0);
-    pthread_mutex_unlock(&mutex_hash);// unlock
-
-	if(lookup_result != NULL){ // in cache: read from cache, set file, send file
-		fprintf(stderr, "***LOOKUP RESULT %s: IN CACHE***\n", data->file_name);
-
-
-        request_set_data(rq, lookup_result);
-		request_sendfile(rq);
-        unflagLRU(lookup_result->file_name, hash_table->lru_list); // unflag //TODO: hold lock when unflag??
-
-        fprintf(stderr, "sent file:%s \n",lookup_result->file_name);
-        //file_data_free(lookup_result); //TODO: DOUBLE FREE?
-		return;
-	} else{ // not in cache: read file, send file, insert into cache(not always)
-
-        fprintf(stderr, "***LOOKUP RESULT %s:  NULL; READING DISK***\n",data->file_name);
+	if (sv->max_cache_size == 0) {
 		ret = request_readfile(rq);
-
 		if (ret == 0) { /* couldn't read file */
 			fprintf(stderr, "***couldn't read file***\n");
 			goto out;
 		}
-		fprintf(stderr, "*** finished reading disk: %s***\n",data->file_name);
+
 		request_sendfile(rq);
-		fprintf(stderr, "*** sent file %s, about to call cache insert ***\n",data->file_name);
-
-		// file already sent to client
-		// Doing insert cache below:
-
-		if(data->file_size <= hash_table->total_cache_size) { //only do insert only if data size < capacity
-            pthread_mutex_lock(&mutex_hash); //lock
-            int insert_result;
-            insert_result = cache_insert(sv, data);
-            fprintf(stderr, "***** finished cache insert func : %s ********\n",data->file_name);
-            pthread_mutex_unlock(&mutex_hash); //unlock
-
-            if(insert_result == -2){ // second cache lookup indicates its in cache, dont cache it
-                fprintf(stderr, "*******222 SECOND LOOKUP RESULT %s: Found in cache***\n", data->file_name);
-                return;
-            }
-            else if(insert_result == -3) { // only 1 in LRU and its in use, and dont cache it
-                fprintf(stderr, "only 1 in LRU and its in use \n ");
-                return;
-            }
-        }else{ // if larger than capacity
-		    fprintf(stderr,"^^^^^^^^^^^^^^^^NOT doing insert, file too large\n");
-		    }
-		fprintf(stderr,"about to return \n");
-		return; //added
-		//request_sendfile(rq);
-		//file_data_free(data);//TODO: DOUBLE FREE?
 	}
+	else{
+	pthread_mutex_lock(&mutex_hash); //lock
 
+	struct file_data *lookup_result;
+	lookup_result = cache_lookup(sv,data->file_name);
+    pthread_mutex_unlock(&mutex_hash);// unlock
 
+	if(lookup_result != NULL){ // in cache: read from cache, set file, send file
+//		fprintf(stderr, "***LOOKUP RESULT %s: IN CACHE***\n", data->file_name);
 
+		pthread_mutex_lock(&mutex_hash); //lock
+        request_set_data(rq, lookup_result);
+        update_LRU(lookup_result->file_name,hash_table->lru_list);
+        pthread_mutex_unlock(&mutex_hash);// unlock
+
+		request_sendfile(rq);
+
+//        fprintf(stderr, "sent file:%s \n",lookup_result->file_name);
+//		return;
+	} else{ // not in cache: read file, send file, insert into cache(not always)
+
+	//        fprintf(stderr, "***LOOKUP RESULT %s:  NULL; READING DISK***\n",data->file_name);
+	//		ret = request_readfile(rq);
+	//
+	//		if (ret == 0) { /* couldn't read file */
+	//			fprintf(stderr, "***couldn't read file***\n");
+	//			goto out;
+	//		}
+	//		fprintf(stderr, "*** finished reading disk: %s***\n",data->file_name);
+	//
+	//		request_sendfile(rq);
+	//		fprintf(stderr, "*** sent file %s, about to call cache insert ***\n",data->file_name);
+	//
+	//		// file already sent to client
+	//		// Doing insert cache below:
+	//
+	//		if(data->file_size <= hash_table->total_cache_size) { //only do insert only if data size < capacity
+	//            pthread_mutex_lock(&mutex_hash); //lock
+	//            int insert_result;
+	//            insert_result = cache_insert(sv, data);
+	//            fprintf(stderr, "***** finished cache insert func : %s ********\n",data->file_name);
+	//            pthread_mutex_unlock(&mutex_hash); //unlock
+	//
+	//            if(insert_result == -2){ // second cache lookup indicates its in cache, dont cache it
+	//                fprintf(stderr, "*******222 SECOND LOOKUP RESULT %s: Found in cache***\n", data->file_name);
+	//                return;
+	//            }
+	//            else if(insert_result == -3) { // only 1 in LRU and its in use, and dont cache it
+	//                fprintf(stderr, "only 1 in LRU and its in use \n ");
+	//                return;
+	//            }
+	//        }else{ // if larger than capacity
+	//		    fprintf(stderr,"^^^^^^^^^^^^^^^^NOT doing insert, file too large\n");
+	//		    }
+	//		fprintf(stderr,"about to return \n");
+	//		return; //added
+	//		//request_sendfile(rq);
+	//		//file_data_free(data);//TODO: DOUBLE FREE?
+	//	}
+
+	//		fprintf(stderr, "***LOOKUP RESULT %s:  NULL; READING DISK***\n",data->file_name);
+			ret = request_readfile(rq);
+
+			if (ret == 0) { /* couldn't read file */
+				fprintf(stderr, "***couldn't read file***\n");
+				goto out;
+			}
+			pthread_mutex_lock(&mutex_hash);
+			struct file_data* lookup_res_two = cache_lookup(sv,data->file_name);
+			if(lookup_res_two == NULL){
+				int insert_res = cache_insert(sv,data);
+				if(insert_res > - 1){
+					update_LRU(data->file_name,hash_table->lru_list);
+				}
+
+			} else{
+				//request_set_data(rq, lookup_res_two);
+				update_LRU(data->file_name,hash_table->lru_list);
+
+			}
+	//		fprintf(stderr, "***BEFORE THE LOCKCCCCC***\n");
+			pthread_mutex_unlock(&mutex_hash);
+			request_sendfile(rq);
+	//		fprintf(stderr, "**READY TO RETURN***\n");
+
+	//		return;
+		}
+	}
 out:
 	request_destroy(rq);
-	file_data_free(data);
+//	file_data_free(data);
 }
 
 /* entry point functions */
@@ -928,7 +965,7 @@ pthread_t * arrayOfPThreads;
 
 struct server * server_init(int nr_threads, int max_requests, int max_cache_size)
 {
-	fprintf(stderr, "******server init begin ********\n");
+//	fprintf(stderr, "******server init begin ********\n");
 
 	/* Lab 4: create worker threads when nr_threads > 0 */
 	/* Lab 4: create queue of max_request size when max_requests > 0 */
@@ -1037,7 +1074,7 @@ void server_request(struct server *sv, int connfd)
 void
 server_exit(struct server *sv)
 {
-	fprintf(stderr, "*****server exit ********\n");
+	//fprintf(stderr, "*****server exit ********\n");
 
 	/* when using one or more worker threads, use sv->exiting to indicate to
 	 * these threads that the server is exiting. make sure to call
@@ -1058,12 +1095,13 @@ server_exit(struct server *sv)
 	free(q);
 
 	//free hashTable
-	pthread_mutex_lock(&mutex_hash);
-	destroyHashNodes(hash_table);
-	destroyLRUNodes(hash_table->lru_list);
-	free(hash_table);
+	if(sv->max_cache_size > 0){
+		destroyHashNodes(hash_table);
+		destroyLRUNodes(hash_table->lru_list);
+		free(hash_table->lru_list);
+		free(hash_table);
+	}
 
-	pthread_mutex_unlock(&mutex_hash);
 
 	/* make sure to free any allocated resources */
 	free(sv);
